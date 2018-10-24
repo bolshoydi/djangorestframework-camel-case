@@ -1,17 +1,12 @@
-import re
 from collections import OrderedDict
+import re
 
-from django.utils import six
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
 
-camelize_re = re.compile(r"[a-z0-9]?_[a-z0-9]")
 
-
-def underscore_to_camel(match):
-    group = match.group()
-    if len(group) == 3:
-        return group[0] + group[2].upper()
-    else:
-        return group[1].upper()
+def underscoreToCamel(match):
+    return match.group()[0] + match.group()[2].upper()
 
 
 def camelize(data):
@@ -30,39 +25,20 @@ def camelize(data):
     return data
 
 
-def get_underscoreize_re(options):
-    if options.get('no_underscore_before_number'):
-        pattern = r'([a-z]|[0-9]+[a-z]?|[A-Z]?)([A-Z])'
-    else:
-        pattern = r'([a-z]|[0-9]+[a-z]?|[A-Z]?)([A-Z0-9])'
-    return re.compile(pattern)
+def camel_to_underscore(name):
+    s1 = first_cap_re.sub(r'\1_\2', name)
+    return all_cap_re.sub(r'\1_\2', s1).lower()
 
 
-def camel_to_underscore(name, **options):
-    underscoreize_re = get_underscoreize_re(options)
-    return underscoreize_re.sub(r'\1_\2', name).lower()
-
-
-def underscoreize(data, **options):
+def underscoreize(data):
     if isinstance(data, dict):
         new_dict = {}
         for key, value in data.items():
-            if isinstance(key, six.string_types):
-                new_key = camel_to_underscore(key, **options)
-            else:
-                new_key = key
-            new_dict[new_key] = underscoreize(value, **options)
+            new_key = camel_to_underscore(key)
+            new_dict[new_key] = underscoreize(value)
         return new_dict
-    if is_iterable(data) and not isinstance(data, six.string_types):
-        return [underscoreize(item, **options) for item in data]
-
+    if isinstance(data, (list, tuple)):
+        for i in range(len(data)):
+            data[i] = underscoreize(data[i])
+        return data
     return data
-
-
-def is_iterable(obj):
-    try:
-        iter(obj)
-    except TypeError:
-        return False
-    else:
-        return True
