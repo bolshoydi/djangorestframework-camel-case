@@ -18,14 +18,15 @@ def camelize(data):
     if isinstance(data, dict):
         new_dict = OrderedDict()
         for key, value in data.items():
-            if isinstance(key, six.string_types) and '_' in key:
-                new_key = re.sub(camelize_re, underscore_to_camel, key)
-            else:
-                new_key = key
+            new_key = re.sub(r"[a-z]_[a-z]", underscoreToCamel, key)
             new_dict[new_key] = camelize(value)
         return new_dict
-    if is_iterable(data) and not isinstance(data, six.string_types):
-        return [camelize(item) for item in data]
+    if isinstance(data, list):
+        for i in range(len(data)):
+            data[i] = camelize(data[i])
+        return data
+    if isinstance(data, tuple):
+        return tuple(map(camelize, data))
     return data
 
 
